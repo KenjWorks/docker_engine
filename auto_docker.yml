@@ -1,0 +1,26 @@
+- hosts: localhost
+  become: true
+  tasks:
+    - name: add user to docker group
+      user:
+        name: "{{ lookup('env','USER') }}"
+        groups: docker
+        append: yes
+
+    - name: creat docker file to download web + db server
+      copy:
+        dest: ./dockerfile
+        content: |
+          FROM ubuntu:22.04
+          RUN apt-get update && \
+              apt-get install -y apache2 mysql-server && \
+              apt-get clean
+          EXPOSE 80 3306
+          CMD service mysql start && apachectl -D FOREGROUND
+
+    - name: build docker image
+      community.docker.docker_image:
+        name: webdb-server
+        source: build
+        build:
+          path: .
